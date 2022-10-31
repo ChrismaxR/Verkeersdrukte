@@ -1,0 +1,472 @@
+---
+title: "Explore Wrangled Data - Verkeersdrukte"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+# setup
+```{r}
+set.seed(42)
+
+source(here::here("code", "wrangle_source_data.R"))
+
+agg_linear_model_grapher <- function(x) {
+  
+  x |> 
+    ggplot(aes(x = files, y = value)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    facet_wrap(~name, scales = "free")
+
+}
+
+unagg_linear_model_grapher_gem_lengte <- function(x) {
+  
+  x |> 
+    ggplot(aes(x = gem_lengte, y = value)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    facet_wrap(~name, scales = "free")
+
+}
+
+unagg_linear_model_grapher_file_duur <- function(x) {
+  
+  x |> 
+    ggplot(aes(x = file_duur, y = value)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    facet_wrap(~name, scales = "free")
+
+}
+unagg_linear_model_grapher_file_zwaarte <- function(x) {
+  
+  x |> 
+    ggplot(aes(x = file_zwaarte, y = value)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    facet_wrap(~name, scales = "free")
+
+}
+
+na_to_zero_int <- function(x) {
+  
+   if_else(is.na(x), 0L, x)
+  
+}
+
+na_to_zero_double <- function(x) {
+  
+   if_else(is.na(x), 0, x)
+  
+}
+
+```
+
+# Aggregated data
+First start out with aggregated data. Visualise apparent covariation in 
+alleged dependent and independent variables:
+
+```{r}
+agg_bools <- file_data_agg |> 
+  select(
+    files,
+    is_weekend, 
+    is_meeting_day, 
+    is_holiday, 
+    is_school_holiday, 
+    min_temp_freeze_bool, 
+    max_temp_freeze_bool
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+agg_nums <- file_data_agg |> 
+  select(
+    files,
+    hoge_intensiteit,
+    ongeval,
+    ongepland_onderhoud,
+    incident,
+    zeer_extreme_weersomstandigheden,
+    overige_oorzaken,
+    day_of_month, 
+    min_temp,
+    max_temp, 
+    avg_temp, 
+    max_wind_gust_ms,
+    min_visability, 
+    max_visability, 
+    precip_dur_hrs, 
+    precip_amount_24h_mm, 
+    max_precip_amount_p_h_mm
+  ) |> 
+  mutate_if(.predicate = is.integer, .funs = na_to_zero_int) |> 
+  mutate_if(.predicate = is.double, .funs = na_to_zero_double) |> 
+  pivot_longer(cols = 2:17)
+
+  
+agg_classes <- file_data_agg |> 
+  select(
+    files,
+    wind_gust_class, 
+    min_visability_class, 
+    max_visability_class,
+    precip_amount_24h_class, 
+    max_precip_amount_p_h_class
+  ) |> 
+  pivot_longer(cols = 2:6)
+```
+
+Visualise the selected variables
+```{r}
+agg_linear_model_grapher(agg_bools)
+agg_linear_model_grapher(agg_nums)
+agg_linear_model_grapher(agg_classes)
+```
+
+
+
+# Unaggregated data
+
+## Gem Lengte
+```{r}
+
+unagg_bools_gem_lengte <- file_data_unagg |> 
+  select(
+    gem_lengte,
+    is_weekend, 
+    is_meeting_day, 
+    is_holiday, 
+    is_school_holiday, 
+    min_temp_freeze_bool, 
+    max_temp_freeze_bool
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+
+unagg_nums_gem_lengte <- file_data_unagg |> 
+  select(
+    gem_lengte,
+    day_of_month, 
+    min_temp,
+    max_temp, 
+    avg_temp, 
+    max_wind_gust_ms,
+    min_visability, 
+    max_visability, 
+    precip_dur_hrs, 
+    precip_amount_24h_mm, 
+    max_precip_amount_p_h_mm
+  ) |> 
+  pivot_longer(cols = 2:11)
+
+unagg_class_gem_lengte <- file_data_unagg |> 
+  select(
+    gem_lengte,
+    file_type,
+    wind_gust_class, 
+    min_visability_class, 
+    max_visability_class,
+    precip_amount_24h_class, 
+    max_precip_amount_p_h_class
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+```
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_gem_lengte(unagg_bools_gem_lengte |> sample_frac(.4)) |> 
+  ggsave(filename = "unagg_bools_gem_lengte.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_gem_lengte(unagg_nums_gem_lengte |> sample_frac(.2)) |> 
+  ggsave(filename = "unagg_nums_gem_lengte.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_gem_lengte(unagg_class_gem_lengte |> sample_frac(.4))|> 
+  ggsave(filename = "unagg_class_gem_lengte.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+
+## File duur
+```{r}
+
+unagg_bools_file_duur <- file_data_unagg |> 
+  select(
+    file_duur,
+    is_weekend, 
+    is_meeting_day, 
+    is_holiday, 
+    is_school_holiday, 
+    min_temp_freeze_bool, 
+    max_temp_freeze_bool
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+
+unagg_nums_file_duur <- file_data_unagg |> 
+  select(
+    file_duur,
+    day_of_month, 
+    min_temp,
+    max_temp, 
+    avg_temp, 
+    max_wind_gust_ms,
+    min_visability, 
+    max_visability, 
+    precip_dur_hrs, 
+    precip_amount_24h_mm, 
+    max_precip_amount_p_h_mm
+  ) |> 
+  pivot_longer(cols = 2:11)
+
+unagg_class_file_duur <- file_data_unagg |> 
+  select(
+    file_duur,
+    file_type,
+    wind_gust_class, 
+    min_visability_class, 
+    max_visability_class,
+    precip_amount_24h_class, 
+    max_precip_amount_p_h_class
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+```
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_file_duur(unagg_bools_file_duur |> sample_frac(.4)) |> 
+  ggsave(filename = "unagg_bools_file_duur.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_file_duur(unagg_nums_file_duur |> sample_frac(.2)) |> 
+  ggsave(filename = "unagg_nums_file_duur.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_file_duur(unagg_class_file_duur |> sample_frac(.4))|> 
+  ggsave(filename = "unagg_class_file_duur.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+## File zwaarte
+```{r}
+
+unagg_bools_file_zwaarte <- file_data_unagg |> 
+  select(
+    file_zwaarte,
+    is_weekend, 
+    is_meeting_day, 
+    is_holiday, 
+    is_school_holiday, 
+    min_temp_freeze_bool, 
+    max_temp_freeze_bool
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+
+unagg_nums_file_zwaarte <- file_data_unagg |> 
+  select(
+    file_zwaarte,
+    day_of_month, 
+    min_temp,
+    max_temp, 
+    avg_temp, 
+    max_wind_gust_ms,
+    min_visability, 
+    max_visability, 
+    precip_dur_hrs, 
+    precip_amount_24h_mm, 
+    max_precip_amount_p_h_mm
+  ) |> 
+  pivot_longer(cols = 2:11)
+
+unagg_class_file_zwaarte <- file_data_unagg |> 
+  select(
+    file_zwaarte,
+    file_type,
+    wind_gust_class, 
+    min_visability_class, 
+    max_visability_class,
+    precip_amount_24h_class, 
+    max_precip_amount_p_h_class
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+```
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_file_zwaarte(unagg_bools_file_zwaarte |> sample_frac(.4)) |> 
+  ggsave(filename = "unagg_bools_file_zwaarte.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_file_zwaarte(unagg_nums_file_zwaarte |> sample_frac(.2)) |> 
+  ggsave(filename = "unagg_nums_file_zwaarte.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_file_zwaarte(unagg_class_file_zwaarte |> sample_frac(.4))|> 
+  ggsave(filename = "unagg_class_file_zwaarte.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+# A4 Den Haag-Schiphol model
+
+## Unaggregated
+
+```{r}
+
+unagg_bools_a4_zwaarte <- a4_file_data_unagg |>
+  filter(
+    route_oms == "A4", 
+    traj_van %in% c("Amsterdam", "Delft", "Den Haag")
+  ) |> 
+  select(
+    file_zwaarte,
+    is_weekend, 
+    is_meeting_day, 
+    is_holiday, 
+    is_school_holiday, 
+    min_temp_freeze_bool, 
+    max_temp_freeze_bool
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+
+unagg_nums_a4_zwaarte <- a4_file_data_unagg |> 
+  select(
+    file_zwaarte,
+    day_of_month, 
+    min_temp,
+    max_temp, 
+    avg_temp, 
+    max_wind_gust_ms,
+    min_visability, 
+    max_visability, 
+    precip_dur_hrs, 
+    precip_amount_24h_mm, 
+    max_precip_amount_p_h_mm
+  ) |> 
+  pivot_longer(cols = 2:11)
+
+unagg_class_a4_zwaarte <- a4_file_data_unagg |> 
+  select(
+    file_zwaarte,
+    file_type,
+    wind_gust_class, 
+    min_visability_class, 
+    max_visability_class,
+    precip_amount_24h_class, 
+    max_precip_amount_p_h_class
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+```
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_file_zwaarte(unagg_bools_a4_zwaarte) |> 
+  ggsave(filename = "unagg_bools_a4_zwaarte.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_file_zwaarte(unagg_nums_a4_zwaarte) |> 
+  ggsave(filename = "unagg_nums_a4_zwaarte.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+
+```{r}
+tictoc::tic()
+unagg_linear_model_grapher_file_zwaarte(unagg_class_a4_zwaarte)|> 
+  ggsave(filename = "unagg_class_a4_zwaarte.png", device = "png", path = here::here("output"))
+tictoc::toc()
+```
+
+## Aggregated
+
+```{r}
+a4_agg_bools <- a4_file_data_agg |> 
+  select(
+    files,
+    is_weekend, 
+    is_meeting_day, 
+    is_holiday, 
+    is_school_holiday, 
+    min_temp_freeze_bool, 
+    max_temp_freeze_bool
+  ) |> 
+  pivot_longer(cols = 2:7)
+
+a4_agg_nums <- a4_file_data_agg |> 
+  select(
+    files,
+    hoge_intensiteit,
+    ongeval,
+    ongepland_onderhoud,
+    incident,
+    zeer_extreme_weersomstandigheden,
+    overige_oorzaken,
+    day_of_month, 
+    min_temp,
+    max_temp, 
+    avg_temp, 
+    max_wind_gust_ms,
+    min_visability, 
+    max_visability, 
+    precip_dur_hrs, 
+    precip_amount_24h_mm, 
+    max_precip_amount_p_h_mm
+  ) |> 
+  mutate_if(.predicate = is.integer, .funs = na_to_zero_int) |> 
+  mutate_if(.predicate = is.double, .funs = na_to_zero_double) |> 
+  pivot_longer(cols = 2:17)
+
+  
+a4_agg_classes <- a4_file_data_agg |> 
+  select(
+    files,
+    wind_gust_class, 
+    min_visability_class, 
+    max_visability_class,
+    precip_amount_24h_class, 
+    max_precip_amount_p_h_class
+  ) |> 
+  pivot_longer(cols = 2:6)
+```
+
+Visualise the selected variables
+```{r}
+agg_linear_model_grapher(a4_agg_bools)
+agg_linear_model_grapher(a4_agg_nums)
+agg_linear_model_grapher(a4_agg_classes)
+```
